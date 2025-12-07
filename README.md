@@ -132,7 +132,7 @@ docker ps
 
 ```powershell
 # Pastikan Anda berada di direktori project
-cd "c:\Users\RAMA\Downloads\Tugas Cloud Service"
+cd "c:\Users\...\Tugas Cloud Service"
 
 # Verifikasi struktur folder
 ls
