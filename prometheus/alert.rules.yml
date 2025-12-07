@@ -1,0 +1,232 @@
+# ============================================
+# Prometheus Alert Rules
+# ============================================
+
+groups:
+  # -----------------------------------------
+  # Infrastructure Alerts
+  # -----------------------------------------
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # Alert: High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage detected on {{ $labels.instance }}"
+          description: "CPU usage is above 80% (current value: {{ $value | humanize }}%)"
+          runbook: "Check top processes consuming CPU. Consider scaling up or optimizing workloads."
+
+      # Alert: Critical CPU Usage
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "CRITICAL: CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 95% (current value: {{ $value | humanize }}%)"
+          runbook: "IMMEDIATE ACTION REQUIRED: Check system processes and kill non-essential tasks."
+
+      # Alert: High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 80% (current value: {{ $value | humanize }}%)"
+          runbook: "Check memory-intensive processes. Consider adding more RAM or optimizing applications."
+
+      # Alert: Critical Memory Usage
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "CRITICAL: Memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 95% (current value: {{ $value | humanize }}%)"
+          runbook: "IMMEDIATE ACTION: Risk of OOM killer. Restart services or add memory."
+
+      # Alert: High Disk Usage
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs",fstype!="rootfs"} / node_filesystem_size_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage on {{ $labels.mountpoint }} is above 80% (current value: {{ $value | humanize }}%)"
+          runbook: "Clean up old logs, temporary files, or add more storage."
+
+      # Alert: Disk Will Fill in 4 Hours
+      - alert: DiskWillFillSoon
+        expr: predict_linear(node_filesystem_avail_bytes{fstype!="tmpfs"}[1h], 4*3600) < 0
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Disk will fill soon on {{ $labels.instance }}"
+          description: "Filesystem {{ $labels.mountpoint }} will run out of space in approximately 4 hours"
+          runbook: "Investigate disk usage growth and free up space immediately."
+
+  # -----------------------------------------
+  # Application Alerts
+  # -----------------------------------------
+  - name: application_alerts
+    interval: 30s
+    rules:
+      # Alert: High Error Rate
+      - alert: HighErrorRate
+        expr: (sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "High error rate detected in application"
+          description: "Error rate is above 5% (current value: {{ $value | humanize }}%)"
+          runbook: "Check application logs for errors. Investigate recent deployments."
+
+      # Alert: Critical Error Rate
+      - alert: CriticalErrorRate
+        expr: (sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 15
+        for: 1m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "CRITICAL: Very high error rate in application"
+          description: "Error rate is above 15% (current value: {{ $value | humanize }}%)"
+          runbook: "IMMEDIATE ACTION: Consider rollback or emergency maintenance."
+
+      # Alert: High Request Latency (P95)
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 3m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "High request latency (P95) detected"
+          description: "95th percentile latency is above 1 second (current value: {{ $value | humanize }}s)"
+          runbook: "Investigate slow queries, database connections, or external API calls."
+
+      # Alert: Very High Request Latency (P99)
+      - alert: VeryHighRequestLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "Very high request latency (P99) detected"
+          description: "99th percentile latency is above 2 seconds (current value: {{ $value | humanize }}s)"
+          runbook: "Critical performance issue. Check for bottlenecks in the request path."
+
+      # Alert: High Request Rate (Traffic Spike)
+      - alert: HighRequestRate
+        expr: sum(rate(http_requests_total[1m])) > 1000
+        for: 2m
+        labels:
+          severity: info
+          category: application
+        annotations:
+          summary: "High request rate detected"
+          description: "Request rate is above 1000 req/s (current value: {{ $value | humanize }} req/s)"
+          runbook: "Monitor for potential DDoS or legitimate traffic spike. Prepare for scaling."
+
+      # Alert: Application Down
+      - alert: ApplicationDown
+        expr: up{job="nodejs-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "Application is down"
+          description: "The application {{ $labels.instance }} is not responding"
+          runbook: "IMMEDIATE ACTION: Check application health, restart service if necessary."
+
+      # Alert: Low Request Rate (Potential Issue)
+      - alert: LowRequestRate
+        expr: sum(rate(http_requests_total[5m])) < 0.1
+        for: 5m
+        labels:
+          severity: info
+          category: application
+        annotations:
+          summary: "Unusually low request rate"
+          description: "Request rate is below 0.1 req/s (current value: {{ $value | humanize }} req/s)"
+          runbook: "Verify if this is expected. Check for upstream issues or DNS problems."
+
+  # -----------------------------------------
+  # Node Exporter Alerts
+  # -----------------------------------------
+  - name: node_exporter_alerts
+    interval: 30s
+    rules:
+      # Alert: Node Exporter Down
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: monitoring
+        annotations:
+          summary: "Node Exporter is down"
+          description: "Node Exporter on {{ $labels.instance }} is not responding"
+          runbook: "Check Node Exporter container/service status and restart if necessary."
+
+      # Alert: High Network Receive
+      - alert: HighNetworkReceive
+        expr: rate(node_network_receive_bytes_total[5m]) > 100000000  # 100 MB/s
+        for: 5m
+        labels:
+          severity: info
+          category: infrastructure
+        annotations:
+          summary: "High network receive rate on {{ $labels.instance }}"
+          description: "Network receive rate on {{ $labels.device }} is above 100 MB/s"
+          runbook: "Monitor for unusual network activity or legitimate traffic increase."
+
+  # -----------------------------------------
+  # Prometheus Self-Monitoring
+  # -----------------------------------------
+  - name: prometheus_alerts
+    interval: 30s
+    rules:
+      # Alert: Prometheus Configuration Reload Failed
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "Prometheus configuration reload failed"
+          description: "Prometheus configuration reload has failed"
+          runbook: "Check Prometheus logs and validate configuration syntax."
+
+      # Alert: Prometheus Target Down
+      - alert: PrometheusTargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "Prometheus target down: {{ $labels.job }}"
+          description: "Target {{ $labels.instance }} in job {{ $labels.job }} is down"
+          runbook: "Check target service health and network connectivity."
