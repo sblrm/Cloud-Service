@@ -966,12 +966,6 @@ scrape_interval: 15s  # Reduce to 30s-60s in prod to save resources
 - **PromQL Guide**: https://prometheus.io/docs/prometheus/latest/querying/basics/
 - **Node Exporter**: https://github.com/prometheus/node_exporter
 
-### Project Files:
-- `docs/PROMQL_QUERIES.md` - Daftar lengkap PromQL queries
-- `docs/TEMPLATE_LAPORAN_ANALISIS.md` - Template untuk reporting
-- `prometheus/alert.rules.yml` - Alert rules configuration
-- `prometheus/prometheus.yml` - Prometheus configuration
-
 ### Pre-built Grafana Dashboards:
 - Node Exporter Full: Dashboard ID **1860**
 - Docker Container Metrics: Dashboard ID **193**
@@ -1008,70 +1002,6 @@ docker system prune -a --volumes
 
 ---
 
-## 📞 Support & Contact
-
-Jika ada pertanyaan atau issue:
-
-1. **Check Logs**: Selalu cek logs terlebih dahulu
-   ```powershell
-   docker compose logs app
-   ```
-
-2. **Verify Configuration**: Pastikan semua file konfigurasi benar
-
-3. **Restart Services**: Banyak issue teratasi dengan restart
-   ```powershell
-   docker compose restart
-   ```
-
-4. **Rebuild**: Jika masih bermasalah, rebuild from scratch
-   ```powershell
-   docker compose down -v
-   docker compose up -d --build
-   ```
-
----
-
-## 📝 Checklist untuk Laporan
-
-Setelah menjalankan monitoring dan load testing, gunakan template di `docs/TEMPLATE_LAPORAN_ANALISIS.md` untuk membuat laporan.
-
-**Checklist:**
-- [ ] Setup stack monitoring (Docker Compose)
-- [ ] Konfigurasi Grafana dashboard
-- [ ] Jalankan baseline test (no load)
-- [ ] Jalankan load test (Apache Bench / wrk / k6)
-- [ ] Screenshot dashboard metrics
-- [ ] Identifikasi anomali (jika ada)
-- [ ] Analisis root cause
-- [ ] Buat rekomendasi optimasi
-- [ ] Lengkapi template laporan
-- [ ] Review dan submit laporan
-
----
-
-## 🎓 Learning Path
-
-**Beginner:**
-1. ✅ Jalankan stack dengan Docker Compose
-2. ✅ Explore Grafana dashboard
-3. ✅ Generate traffic dengan curl
-4. ✅ Observe metrics changes
-
-**Intermediate:**
-5. ✅ Create custom dashboard
-6. ✅ Write PromQL queries
-7. ✅ Conduct load testing
-8. ✅ Analyze metrics correlation
-
-**Advanced:**
-9. ✅ Configure alerting
-10. ✅ Optimize application based on metrics
-11. ✅ Implement auto-scaling rules
-12. ✅ Long-term capacity planning
-
----
-
 ## 🚀 Next Steps
 
 Setelah comfortable dengan setup ini:
@@ -1098,16 +1028,6 @@ Setelah comfortable dengan setup ini:
 
 ---
 
-**Happy Monitoring! 🎉**
-
-Semoga stack monitoring ini membantu Anda untuk:
-- ✅ Detect issues early
-- ✅ Understand system behavior
-- ✅ Optimize performance
-- ✅ Make data-driven decisions
-
----
-
-**Last Updated**: December 2024  
+**Last Updated**: December 2025  
 **Version**: 1.0.0  
-**Author**: DevOps Team
+**Author**: Group 3
